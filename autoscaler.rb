@@ -11,9 +11,9 @@ class Autoscaler
     log "name:#{name} selector:#{selector} cpu:#{cpu} pods:#{pods} utilisation:#{utilisation} strategy:#{strategy}"
 
     if new_pods != pods
-      log "scaling #{direction}"
+      log "scaling #{direction} to #{new_pods}"
       log %x(kubectl scale --replicas #{new_pods} #{resource} -l #{selector})
-      `curl -X POST https://katana.wishpond.com/notify/scale \
+      `curl -s -X POST https://katana.wishpond.com/notify/scale \
             --header "Content-Type: application/json" \
             --header "X-KATANA-TOKEN:#{ENV['KATANA_SECRET']}" \
             -d "{\"name\":\"#{name}\",\"selector\":\"#{selector}\",\"cpu\":\"#{cpu}\",\"pods\":\"#{pods}\",\"new_pods\":\"#{new_pods}\",\"utilisation\":\"#{utilisation}\",\"resource\":\"#{resource}\",\"direction\":\"#{direction}\"}"`
