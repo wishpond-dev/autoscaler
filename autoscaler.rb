@@ -44,8 +44,6 @@ when 'metric'
 
   new_pods = (pods * (current_value / desired_value)).ceil
 
-  puts "current:#{current_value} desired:#{desired_value} new_pods:#{new_pods}"
-
   if new_pods > pods
     new_pods = [new_pods, max_pods].min
     direction = 'up'
@@ -53,18 +51,21 @@ when 'metric'
     new_pods = [new_pods, min_pods].max
     direction = 'down'
   end
+
+  puts "current:#{current_value} desired:#{desired_value} new_pods:#{new_pods} direction:#{direction}"
+
 else
   raise "Unknown strategy: #{strategy}"
 end
 
 if new_pods != pods
   puts "scaling #{direction}"
-  command = %(kubectl scale --replicas $new_pods #{resource} -l #{selector})
+  command = %(kubectl scale --replicas #{new_pods} #{resource} -l #{selector})
   puts command
-  puts %x(#{command})
-  `curl -X POST https://katana.wishpond.com/notify/scale \
-        --header "Content-Type: application/json" \
-        --header "X-KATANA-TOKEN:#{ENV['KATANA_SECRET']}" \
-        -d "{\"name\":\"#{name}\",\"selector\":\"#{selector}\",\"cpu\":\"#{cpu}\",\"pods\":\"#{pods}\",\"new_pods\":\"#{new_pods}\",\"utilisation\":\"#{utilisation}\",\"resource\":\"#{resource}\",\"direction\":\"#{direction}\"}"`
-        #,\"scale_up\":\"$scale_up\",\"scale_down\":\"$scale_down\",\"factor\":\"$factor\"
+  # puts %x(#{command})
+  # `curl -X POST https://katana.wishpond.com/notify/scale \
+  #       --header "Content-Type: application/json" \
+  #       --header "X-KATANA-TOKEN:#{ENV['KATANA_SECRET']}" \
+  #       -d "{\"name\":\"#{name}\",\"selector\":\"#{selector}\",\"cpu\":\"#{cpu}\",\"pods\":\"#{pods}\",\"new_pods\":\"#{new_pods}\",\"utilisation\":\"#{utilisation}\",\"resource\":\"#{resource}\",\"direction\":\"#{direction}\"}"`
+  #       #,\"scale_up\":\"$scale_up\",\"scale_down\":\"$scale_down\",\"factor\":\"$factor\"
 end
