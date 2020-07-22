@@ -10,16 +10,15 @@ strategy = ENV['STRATEGY'] || 'average_cpu'
 # TODO: Filter out any pods that aren't relevant
 #
 command = %(kubectl top pods -l #{selector} --no-headers > /tmp/pods)
-puts command
 `#{command}`
 
 pods = `cat /tmp/pods | wc -l`.chomp.to_i
 cpu = `awk '{s+=$2} END {print s}' /tmp/pods`.chomp.to_i
-utilisation = cpu / (pods * 1.0)
+utilisation = cpu / pods
 new_pods = pods
 direction = 'none'
 
-puts "name:#{name} selector:#{selector} cpu:#{cpu} pods:#{pods} utilisation:#{utilisation}"
+puts "name:#{name} selector:#{selector} cpu:#{cpu} pods:#{pods} utilisation:#{utilisation} strategy:#{strategy}"
 
 case strategy
 when 'average_cpu'
@@ -45,6 +44,8 @@ when 'metric'
 
   new_pods = (pods * (current_value / desired_value)).ceil
 
+  puts "current:#{current_value} desired:#{desired_value} new_pods:#{new_pods}"
+
   if new_pods > pods
     new_pods = [new_pods, max_pods].min
     direction = 'up'
@@ -61,9 +62,9 @@ if new_pods != pods
   command = %(kubectl scale --replicas $new_pods #{resource} -l #{selector})
   puts command
   puts %x(#{command})
-  %x(curl -X POST https://katana.wishpond.com/notify/scale \
+  `curl -X POST https://katana.wishpond.com/notify/scale \
         --header "Content-Type: application/json" \
         --header "X-KATANA-TOKEN:#{ENV['KATANA_SECRET']}" \
-        -d "{\"name\":\"#{name}\",\"selector\":\"#{selector}\",\"cpu\":\"#{cpu}\",\"pods\":\"#{pods}\",\"new_pods\":\"#{new_pods}\",\"utilisation\":\"#{utilisation}\",\"resource\":\"#{resource}\",\"direction\":\"#{direction}\"}")
+        -d "{\"name\":\"#{name}\",\"selector\":\"#{selector}\",\"cpu\":\"#{cpu}\",\"pods\":\"#{pods}\",\"new_pods\":\"#{new_pods}\",\"utilisation\":\"#{utilisation}\",\"resource\":\"#{resource}\",\"direction\":\"#{direction}\"}"`
         #,\"scale_up\":\"$scale_up\",\"scale_down\":\"$scale_down\",\"factor\":\"$factor\"
 end
