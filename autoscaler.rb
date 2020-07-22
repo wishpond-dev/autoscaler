@@ -36,7 +36,7 @@ when 'average_cpu'
     direction = 'down'
   end
 when 'metric'
-  current_value = %x(curl #{ENV['ENDPOINT']}).to_f
+  current_value = %x(curl -s #{ENV['ENDPOINT']}).to_f
   desired_value = (ENV['TARGET'] || '1').to_f
 
   # Desired value can't be zero
