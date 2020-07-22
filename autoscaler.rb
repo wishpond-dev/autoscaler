@@ -9,7 +9,7 @@ strategy = ENV['STRATEGY'] || 'average_cpu'
 #
 # TODO: Filter out any pods that aren't relevant
 #
-`kubectl top pods -l $selector --no-headers > /tmp/pods`
+`kubectl top pods -l #{selector} --no-headers > /tmp/pods`
 
 pods = `cat /tmp/pods | wc -l`.chomp.to_i
 cpu = `awk '{s+=$2} END {print s}' /tmp/pods`.chomp.to_i
