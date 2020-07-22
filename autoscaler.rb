@@ -8,7 +8,7 @@ class Autoscaler
   end
 
   def run
-    log "name:#{name} selector:#{selector} cpu:#{cpu} pods:#{pods} utilisation:#{utilisation} strategy:#{strategy}"
+    log "name:#{name} selector:#{selector} pods:#{pods} strategy:#{strategy}"
 
     if new_pods != pods
       log "scaling #{direction} to #{new_pods}"
@@ -102,6 +102,8 @@ class Autoscaler
     scale_down = (ENV['SCALE_DOWN'] || '100').to_i
     factor = (ENV['FACTOR'] || '2').to_i
 
+    log "cpu:#{cpu} utilisation:#{utilisation} scale_up:#{scale_up} scale_down:#{scale_down} factor:#{factor}"
+
     if utilisation > scale_up
       pods * factor
     elsif utilisation < scale_down
@@ -110,11 +112,14 @@ class Autoscaler
   end
 
   def new_pods_by_metric
-    current_value = %x(curl -s #{ENV['ENDPOINT']}).to_f
+    endpoint = ENV['ENDPOINT']
+    current_value = %x(curl -s #{endpoint}).to_f
     desired_value = (ENV['TARGET'] || '1').to_f
 
     # Desired value can't be zero
     raise "TARGET can't be 0" if desired_value == '0'.to_f
+
+    log "current_value:#{current_value} desired_value:#{desired_value} endpoint:#{endpoint}"
 
     (pods * (current_value / desired_value)).ceil
   end
